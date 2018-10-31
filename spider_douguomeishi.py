@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 # 创建队列
 queue_list = Queue()
 
-from handel_mongo import mongo_info
+from handel_mongo import mongo_async_info
 from handle_proxy import get_proxy
 
 
@@ -121,13 +121,16 @@ def handle_caipu_list(data):
             caipu_info['cook_step'] = detail_response_dict['result']['recipe']['cookstep']
             print('当前入库的菜谱是: ', caipu_info['caipu_name'])
             # mongdb当中去
-            mongo_info.insert_item(caipu_info)
+            mongo_async_info.insert_async_item(caipu_info)
         else:
             continue
+if __name__ == '__main__':
 
+    handle_index()
+    # 实现多线程抓取，引入了线程池
+    pool = ThreadPoolExecutor(max_workers=5) # 最大线程数
+    while queue_list.qsize() > 0:
+        pool.submit(handle_caipu_list, queue_list.get())
+        # 通过submit函数提交执行的函数到线程池中，submit函数立即返回，不阻塞
+        # queue_list.get() 传递的参数
 
-handle_index()
-# 实现多线程抓取，引入了线程池
-pool = ThreadPoolExecutor(max_workers=2)
-while queue_list.qsize() > 0:
-    pool.submit(handle_caipu_list, queue_list.get())
